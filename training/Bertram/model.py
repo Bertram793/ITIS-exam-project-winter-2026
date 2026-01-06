@@ -1,31 +1,30 @@
-import tensorflow as tf
-import os 
-import matplotlib.pyplot as plt
-from keras.utils import img_to_array, load_img
-import numpy as np
-import cv2
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from keras.callbacks import EarlyStopping
+import os
+import torch
+import torch.nn as nn
+import torchvision.transforms as transforms
+from PIL import Image
 
-train_path = "C:/DTU/ITIS/archive/train/train/"
-test_path = "C:/DTU/ITIS/archive/test/test/"
+# -------- Paths (USE RELATIVE PATHS) --------
+TRAIN_PATH = "fruits_dataset/train/train"   # change if needed
+TEST_PATH = "fruits_dataset/test/test"
 
-Batch_size = 32
 
-img = load_img(train_path + "Apple Braeburn/Apple Braeburn_0.jpg")
+BATCH_SIZE = 492
+NUM_CLASSES = 33
 
-img1 = img_to_array(img)
-print(img1.shape)
+# -------- Load and inspect ONE image --------
+img_path = os.path.join(
+    TRAIN_PATH,
+    "Apple Braeburn",
+    "Apple Braeburn_0.jpg"
+)
 
-model = Sequential()
-model.add(Conv2D(filters=64, kernel_size=3, activation='relu', input_shape=(100, 100, 3)))
-model.add(MaxPooling2D())
-model.add(Conv2D(filters=32, kernel_size=3, activation='relu'))
-model.add(Conv2D(filters=16, kernel_size=3, activation='relu'))
-model.add(MaxPooling2D())
-model.add(Flatten())
-model.add(Dense(5000, activation='relu'))
-model.add(Dense(1000, activation='relu'))
-model.add(Dense(131, activation='softmax'))
+transform = transforms.Compose([
+    transforms.Resize((100, 100)),
+    transforms.ToTensor()   # (C, H, W) in [0,1]
+])
+
+img = Image.open(img_path).convert("RGB")
+img_tensor = transform(img)
+
+print(img_tensor.shape)   # torch.Size([3, 100, 100])
