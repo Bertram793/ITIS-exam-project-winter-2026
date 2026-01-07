@@ -13,7 +13,7 @@ def evaluate_and_visualize(
 
     correct = 0
     total = 0
-    failed_samples = []
+    failed = []
 
     class_names = dataset.classes
 
@@ -30,7 +30,7 @@ def evaluate_and_visualize(
 
             for i in range(images.size(0)):
                 if preds[i] != labels[i]:
-                    failed_samples.append({
+                    failed.append({
                         "image": images[i].cpu(),
                         "true": labels[i].item(),
                         "pred": preds[i].item()
@@ -38,18 +38,18 @@ def evaluate_and_visualize(
 
     accuracy = correct / total if total > 0 else 0.0
     print(f"\nTest accuracy: {accuracy:.4f}")
-    print(f"Total failed samples: {len(failed_samples)} / {total}")
+    print(f"Failed samples: {len(failed)} / {total}")
 
-    num_show = min(max_images, len(failed_samples))
-    if num_show == 0:
+    if len(failed) == 0:
         print("No misclassified samples 🎉")
         return
 
+    num_show = min(max_images, len(failed))
     fig, axes = plt.subplots(4, 4, figsize=(12, 12))
     axes = axes.flatten()
 
     for i in range(num_show):
-        sample = failed_samples[i]
+        sample = failed[i]
         img = sample["image"].permute(1, 2, 0)
 
         axes[i].imshow(img)
@@ -64,13 +64,6 @@ def evaluate_and_visualize(
     for j in range(num_show, len(axes)):
         axes[j].axis("off")
 
-    plt.suptitle("Misclassified Test Images", fontsize=14)
+    plt.suptitle("Misclassified Test Images")
     plt.tight_layout()
     plt.show()
-
-    print("\nFirst failed predictions:")
-    for i, sample in enumerate(failed_samples[:20]):
-        print(
-            f"{i+1:02d}. True: {class_names[sample['true']]} | "
-            f"Predicted: {class_names[sample['pred']]}"
-        )

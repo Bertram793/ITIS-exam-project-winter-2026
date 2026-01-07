@@ -1,6 +1,4 @@
 import torch
-import torch.nn as nn
-import torch.optim as optim
 from tqdm import tqdm
 
 
@@ -8,23 +6,22 @@ def train_model(
     model,
     train_loader,
     val_loader,
+    criterion,
+    optimizer,
     device,
-    epochs=5,
-    lr=1e-3
+    epochs
 ):
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-
     train_losses = []
     val_losses = []
 
     for epoch in range(epochs):
-        # ---- Training ----
+        # ---- TRAIN ----
         model.train()
         running_loss = 0.0
 
         for images, labels in tqdm(
-            train_loader, desc=f"Epoch {epoch+1} - Train"
+            train_loader,
+            desc=f"Epoch {epoch+1} - Train"
         ):
             images = images.to(device)
             labels = labels.to(device)
@@ -40,13 +37,14 @@ def train_model(
         train_loss = running_loss / len(train_loader.dataset)
         train_losses.append(train_loss)
 
-        # ---- Validation ----
+        # ---- VALIDATION ----
         model.eval()
         running_loss = 0.0
 
         with torch.no_grad():
             for images, labels in tqdm(
-                val_loader, desc=f"Epoch {epoch+1} - Val"
+                val_loader,
+                desc=f"Epoch {epoch+1} - Val"
             ):
                 images = images.to(device)
                 labels = labels.to(device)

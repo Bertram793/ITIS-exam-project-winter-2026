@@ -1,5 +1,4 @@
-import torch
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, random_split
 from torchvision.datasets import ImageFolder
 import torchvision.transforms as transforms
 
@@ -24,3 +23,19 @@ def get_transforms():
         transforms.Resize((128, 128)),
         transforms.ToTensor()
     ])
+
+
+def build_datasets(data_dir, train_ratio=0.7, val_ratio=0.15):
+    dataset = FruitDatabase(data_dir, transform=get_transforms())
+
+    total_size = len(dataset)
+    train_size = int(train_ratio * total_size)
+    val_size = int(val_ratio * total_size)
+    test_size = total_size - train_size - val_size
+
+    train_ds, val_ds, test_ds = random_split(
+        dataset,
+        [train_size, val_size, test_size]
+    )
+
+    return dataset, train_ds, val_ds, test_ds

@@ -1,67 +1,67 @@
+import os
 import torch
-from torch.utils.data import DataLoader, random_split
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
 
-from training.dataset import FruitDatabase, get_transforms
+from training.dataset import build_datasets
 from training.model import SimpleFruitClassifier
 from training.train import train_model
 from training.evaluate import evaluate_and_visualize
 
 
-# ---------------- CONFIG ----------------
-DATA_DIR = "/Users/bertramsillesen/Desktop/archive/Fruit-262"
-BATCH_SIZE = 32
-NUM_CLASSES = 2      # change to 262 later
+# ---- CONFIG ----
 NUM_EPOCHS = 5
-# ---------------------------------------
+BATCH_SIZE = 32
+LR = 1e-3
 
-
-def main():
-    device = torch.device(
-        "cuda" if torch.cuda.is_available()
-        else "mps" if torch.backends.mps.is_available()
-        else "cpu"
-    )
-    print("Using device:", device)
-
-    transform = get_transforms()
-    full_dataset = FruitDatabase(DATA_DIR, transform)
-
-    print(f"Number of classes: {len(full_dataset.classes)}")
-    print(f"Example classes: {full_dataset.classes[:5]}")
-
-    # Split dataset
-    total_size = len(full_dataset)
-    train_size = int(0.7 * total_size)
-    val_size = int(0.15 * total_size)
-    test_size = total_size - train_size - val_size
-
-    train_ds, val_ds, test_ds = random_split(
-        full_dataset,
-        [train_size, val_size, test_size]
+DATA_DIR = os.environ.get("DATA_DIR")
+if DATA_DIR is None:
+    raise RuntimeError(
+        "DATA_DIR not set. "
+        "Run with: export DATA_DIR=/work3/<user>/Fruit-262"
     )
 
-    train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
-    val_loader = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
-    test_loader = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
+# ---- DEVICE ----
+device = torch.device(
+    "cuda" if torch.cuda.is_available()
+    else "mps" if torch.backends.mps.is_available()
+    else "cpu"
+)
+print("Using device:", device)
 
-    model = SimpleFruitClassifier(num_classes=NUM_CLASSES).to(device)
+# ---- DATA ----
+full_dataset, train_ds, val_ds, test_ds = build_datasets(DATA_DIR)
+num_classes = len(full_dataset.classes)
 
-    train_losses, val_losses = train_model(
-        model,
-        train_loader,
-        val_loader,
-        device,
-        epochs=NUM_EPOCHS
-    )
+train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
+val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
+test_loader  = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
 
-    evaluate_and_visualize(
-        model=model,
-        dataloader=test_loader,
-        dataset=full_dataset,
-        device=device,
-        max_images=16
-    )
+print(f"Number of classes: {num_classes}")
+print(f"Example classes: {full_dataset.classes[:5]}")
 
+# ---- MODEL ----
+model = SimpleFruitClassifier(num_classes=num_classes).to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=LR)
 
-if __name__ == "__main__":
-    main()
+# ---- TRAIN ----
+train_model(
+    model,
+    train_loader,
+    val_loader,
+    criterion,
+    optimizer,
+    device,
+    epochs=NUM_EPOCHS
+)
+
+# ---- EVALUATE ----
+evaluate_and_visualize(
+    model=model,
+    dataloader=test_loader,
+    dataset=full_dataset,
+    device=device,
+    max_images=16
+)
