@@ -79,7 +79,7 @@ print("Using device:", device)
 
 # Training setup
 NUM_CLASSES = 2   # change to 262 when ready
-NUM_EPOCHS = 5
+NUM_EPOCHS = 5    # change to different loop-througs
 LR = 1e-3
 
 model = SimpleFruitClassifier(num_classes=NUM_CLASSES).to(device)
