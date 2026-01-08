@@ -41,7 +41,7 @@ def evaluate_and_visualize(
     print(f"Failed samples: {len(failed)} / {total}")
 
     if len(failed) == 0:
-        print("No misclassified samples 🎉")
+        print("No misclassified samples")
         return
 
     num_show = min(max_images, len(failed))

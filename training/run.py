@@ -1,26 +1,20 @@
-import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
+import torchvision.transforms as transforms
 
-from training.dataset import build_datasets
+from training.dataset import FruitDatabase
 from training.model import SimpleFruitClassifier
 from training.train import train_model
 from training.evaluate import evaluate_and_visualize
 
-
-# ---- CONFIG ----
-NUM_EPOCHS = 5
+# ---- PATHS ----
+DATA_DIR = "/Users/bertramsillesen/Desktop/archive/Fruit-262"   # HPC path
 BATCH_SIZE = 32
+EPOCHS = 5
 LR = 1e-3
-
-DATA_DIR = os.environ.get("DATA_DIR")
-if DATA_DIR is None:
-    raise RuntimeError(
-        "DATA_DIR not set. "
-        "Run with: export DATA_DIR=/work3/<user>/Fruit-262"
-    )
+NUM_CLASSES = 2
 
 # ---- DEVICE ----
 device = torch.device(
@@ -30,34 +24,50 @@ device = torch.device(
 )
 print("Using device:", device)
 
-# ---- DATA ----
-full_dataset, train_ds, val_ds, test_ds = build_datasets(DATA_DIR)
-num_classes = len(full_dataset.classes)
+# ---- TRANSFORMS ----
+transform = transforms.Compose([
+    transforms.Resize((128, 128)),
+    transforms.ToTensor()
+])
+
+# ---- DATASET ----
+full_dataset = FruitDatabase(DATA_DIR, transform=transform)
+
+train_size = int(0.7 * len(full_dataset))
+val_size = int(0.15 * len(full_dataset))
+test_size = len(full_dataset) - train_size - val_size
+
+train_ds, val_ds, test_ds = random_split(
+    full_dataset,
+    [train_size, val_size, test_size]
+)
 
 train_loader = DataLoader(train_ds, batch_size=BATCH_SIZE, shuffle=True)
 val_loader   = DataLoader(val_ds, batch_size=BATCH_SIZE, shuffle=False)
 test_loader  = DataLoader(test_ds, batch_size=BATCH_SIZE, shuffle=False)
 
-print(f"Number of classes: {num_classes}")
-print(f"Example classes: {full_dataset.classes[:5]}")
-
 # ---- MODEL ----
-model = SimpleFruitClassifier(num_classes=num_classes).to(device)
+model = SimpleFruitClassifier(num_classes=NUM_CLASSES).to(device)
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.Adam(model.parameters(), lr=LR)
 
 # ---- TRAIN ----
 train_model(
-    model,
-    train_loader,
-    val_loader,
-    criterion,
-    optimizer,
-    device,
-    epochs=NUM_EPOCHS
+    model=model,
+    train_loader=train_loader,
+    val_loader=val_loader,
+    criterion=criterion,
+    optimizer=optimizer,
+    device=device,
+    epochs=EPOCHS,
+    save_path="model.pt"
 )
 
-# ---- EVALUATE ----
+# ---- LOAD + EVALUATE ----
+checkpoint = torch.load("model.pt", map_location=device)
+model.load_state_dict(checkpoint["model_state_dict"])
+model.to(device)
+
 evaluate_and_visualize(
     model=model,
     dataloader=test_loader,

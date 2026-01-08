@@ -9,7 +9,8 @@ def train_model(
     criterion,
     optimizer,
     device,
-    epochs
+    epochs,
+    save_path="model.pt"
 ):
     train_losses = []
     val_losses = []
@@ -61,5 +62,15 @@ def train_model(
             f"Train loss: {train_loss:.4f} | "
             f"Val loss: {val_loss:.4f}"
         )
+
+    
+    # SAVE MODEL HERE (before return)
+    torch.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "epochs": epochs
+        },
+        "model.pt"
+    )
 
     return train_losses, val_losses
