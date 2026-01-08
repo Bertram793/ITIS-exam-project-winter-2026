@@ -16,7 +16,7 @@ def train_model(
     val_losses = []
 
     for epoch in range(epochs):
-        # ---- TRAIN ----
+        # Training loop
         model.train()
         running_loss = 0.0
 
@@ -38,7 +38,7 @@ def train_model(
         train_loss = running_loss / len(train_loader.dataset)
         train_losses.append(train_loss)
 
-        # ---- VALIDATION ----
+        # Validation loop
         model.eval()
         running_loss = 0.0
 
@@ -64,7 +64,7 @@ def train_model(
         )
 
     
-    # SAVE MODEL HERE (before return)
+    # Save trained model
     torch.save(
         {
             "model_state_dict": model.state_dict(),

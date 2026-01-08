@@ -7,16 +7,16 @@ from training.dataset import FruitDatabase
 from training.model import SimpleFruitClassifier
 from training.evaluate import evaluate_and_visualize
 
-# ---- SAFETY FOR MAC OPENMP ----
+# Fix for mac bug
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
-# ---- PATHS ----
+# Paths to dataset and where trained model is stored
 DATA_DIR = "/Users/bertramsillesen/Desktop/archive/Fruit-262"   # change if local
 MODEL_PATH = "model.pt"
 BATCH_SIZE = 32
 NUM_CLASSES = 2
 
-# ---- DEVICE ----
+# Choose what processor it should run on
 device = torch.device(
     "cuda" if torch.cuda.is_available()
     else "mps" if torch.backends.mps.is_available()
@@ -24,13 +24,13 @@ device = torch.device(
 )
 print("Using device:", device)
 
-# ---- TRANSFORMS ----
+# Transforms pictures to tensors and scale them
 transform = transforms.Compose([
     transforms.Resize((128, 128)),
     transforms.ToTensor()
 ])
 
-# ---- DATASET (FULL DATASET OR TEST SPLIT) ----
+# Load the dataset
 dataset = FruitDatabase(DATA_DIR, transform=transform)
 
 test_loader = DataLoader(
@@ -39,17 +39,17 @@ test_loader = DataLoader(
     shuffle=False
 )
 
-# ---- MODEL ----
+# Model
 model = SimpleFruitClassifier(num_classes=NUM_CLASSES).to(device)
 
-# ---- LOAD SAVED MODEL ----
+# Load the trained model
 checkpoint = torch.load(MODEL_PATH, map_location=device)
 model.load_state_dict(checkpoint["model_state_dict"])
 model.eval()
 
 print("Model loaded from", MODEL_PATH)
 
-# ---- EVALUATE ----
+# Analysis of the model
 evaluate_and_visualize(
     model=model,
     dataloader=test_loader,
